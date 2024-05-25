@@ -1,7 +1,9 @@
 import asyncio
+import os
 
 from aiogram import Router, types
 from aiogram.filters import CommandStart
+from aiogram.types import FSInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app_wedding.compilate.sql_pdf import create_jpg_html
@@ -121,7 +123,14 @@ async def get_quiz_values(session: AsyncSession, user_id: int) -> dict:
 async def user_menu(callback: types.CallbackQuery, callback_data: EndMenuCallBack, session: AsyncSession):
     """ Результирующий хендлер """
     if callback_data.menu_name == "end":
-        result = await get_quiz_values(session, user_id=callback.from_user.id)
-        create_jpg_html(result)
+        create_jpg_html(result_data=await get_quiz_values(session, user_id=callback.from_user.id),
+                        user_id=callback.from_user.id)
+
+        print(await get_quiz_values(session, user_id=callback.from_user.id))
+
+        await callback.message.answer_document(document=FSInputFile(f"./app_wedding/compilate/{callback.from_user.id}.jpg"))
+
+        os.remove(f"./app_wedding/compilate/{callback.from_user.id}.jpg")
+        os.remove(f"./app_wedding/compilate/{callback.from_user.id}.html")
 
     await callback.answer()
